@@ -123,6 +123,14 @@ The testcase has been reduced from 11 elements to 7 elements.
 | 2 | 3 | 5 | 5 | No |
 | 3 | 3 | 5 | 5 | No |
 
+## One-element removal from 3 elements
+
+| Removed index | Remaining size | Candidate | Oracle | Still fails? |
+|---:|---:|---:|---:|---|
+| 0 | 2 | 9 | 9 | No |
+| 1 | 2 | 0 | 0 | No |
+| 2 | 2 | 0 | 0 | No |
+
 ## Result of One-Element Reduction
 
 Starting testcase:
