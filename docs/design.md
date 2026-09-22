@@ -307,3 +307,32 @@ The repository should therefore preserve:
 - experiments,
 - failures,
 - and changes made in response to those findings.
+
+## Implementation Language
+
+The tool will initially be implemented in C++20.
+
+The experiments and candidate/oracle programs are already written in
+C++, so using C++20 keeps the experimental environment consistent while
+allowing the tool itself to remain independent of the specific candidate
+algorithm.
+
+## Execution Model
+
+The candidate and oracle will be executed as separate processes.
+
+The testcase will be serialized and provided through standard input.
+
+The execution layer will capture standard output and standard error and
+will enforce a timeout so that a hanging program cannot hang the
+shrinker itself.
+
+A timeout is not considered a correctness failure in V1.
+
+## Output Comparison
+
+For V1, program outputs will be compared as whitespace-separated tokens.
+
+Differences in leading, trailing, or repeated whitespace will not
+constitute a correctness difference. A difference in token values or
+token count will constitute a difference.
