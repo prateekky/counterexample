@@ -157,3 +157,76 @@ this experiment.
 
 This does not establish that greedy one-element deletion
 always produces a globally minimal testcase.
+
+
+## Chunk Reduction Experiment
+
+Starting testcase:
+
+[1,2,4,2,5,7,2,4,9,0,9]
+
+### Split into two chunks
+
+A = [1,2,4,2,5,7]
+B = [2,4,9,0,9]
+
+| Removed chunk | Remaining testcase | Candidate | Oracle | Still fails? |
+|---|---|---:|---:|---|
+| A | [2,4,9,0,9] | 7 | 9 | Yes |
+| B | [1,2,4,2,5,7] | 6 | 6 | No |
+
+### Split the valid remaining input
+
+[2,4,9,0,9]
+
+A = [2,4]
+B = [9,0,9]
+
+| Removed chunk | Remaining testcase | Candidate | Oracle | Still fails? |
+|---|---|---:|---:|---|
+| A | [9,0,9] | 9 | 9 | No |
+| B | [2,4] | 2 | 2 | No |
+
+### Observation
+
+Neither half can be removed. So, Instead of 2 chunks, increase the granularity.
+
+When no current chunk can be removed, increase the number of chunks and try again.
+
+### Current Split: Instead of 2 chunks -> 4 chunks
+
+[2,4,9,0,9]
+
+A = [2]
+B = [4]
+C = [9]
+D = [0,9]
+
+| Removed chunk | Remaining testcase | Candidate | Oracle | Still fails? |
+|---|---|---:|---:|---|
+| A | [4,9,0,9] | 5 | 9 | Yes |
+| B | [2,9,0,9] | 5 | 9 | Yes |
+| C | [2,4,0,9] | 5 | 9 | Yes |
+| D | [2,4,9] | 7 | 7 | No |
+
+
+## Chunk Reduction Result
+
+Starting from the original 11-element testcase, chunk-based
+reduction reached the same 4-element counterexample:
+
+[4,9,0,9]
+
+The chunk experiment required 8 candidate/oracle comparisons
+during deletion attempts, compared with 60 attempts for the
+one-element greedy reduction.
+
+### Observation
+
+Removing larger chunks can eliminate irrelevant elements much
+faster than removing elements individually.
+
+However, a two-chunk split is not always sufficient. In this
+experiment, neither half of [2,4,9,0,9] could be removed while
+preserving the failure, so the reduction needed to increase
+the number of chunks.
