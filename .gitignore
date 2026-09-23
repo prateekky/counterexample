@@ -1,0 +1,17 @@
+# Build artifacts
+counterexample
+*.o
+
+# Temporary test binaries
+testcase_test
+runner_test
+comparator_test
+crash
+timeout
+
+# Temporary test programs
+crash.cpp
+timeout.cpp
+
+# Build directory
+build/

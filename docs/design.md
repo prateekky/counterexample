@@ -336,3 +336,9 @@ For V1, program outputs will be compared as whitespace-separated tokens.
 Differences in leading, trailing, or repeated whitespace will not
 constitute a correctness difference. A difference in token values or
 token count will constitute a difference.
+
+Only stdout is used for correctness comparison.
+stderr is ignored.
+
+Outputs are compared as whitespace-separated tokens, so differences
+in whitespace alone do not constitute a correctness failure.
