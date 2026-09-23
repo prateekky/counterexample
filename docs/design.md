@@ -85,9 +85,9 @@ counterexample, but it may require many candidate/oracle executions.
 
 The second strategy removes larger contiguous chunks.
 
-The original testcase was first divided into two chunks. Removing the
-first chunk preserved the failure and reduced the testcase from 11
-elements to 5 elements.
+The manual experiment initially used a 6+5 split for the 11-element
+testcase. Removing the first 6-element chunk preserved the failure and
+reduced the testcase from 11 elements to 5 elements.
 
 At the 5-element testcase, neither half could be removed while
 preserving the failure. Increasing the granularity to four chunks then
@@ -98,6 +98,12 @@ allowed a further reduction to:
 This experiment suggested that larger chunks can remove irrelevant
 input more efficiently, while finer granularity is necessary when a
 failure depends on elements distributed across multiple chunks.
+
+For the implementation, the partitioning rule was later defined so
+that remainder elements are assigned to the last chunks. Therefore,
+the implementation will partition 11 elements into two chunks as:
+
+    [5] [6]
 
 ---
 
