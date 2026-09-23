@@ -41,6 +41,76 @@ The first version deliberately keeps the problem narrow.
 
 ---
 
+## Design Principle
+
+The project is intentionally being developed experimentally.
+
+Rather than choosing a final algorithm in advance, reduction strategies
+are tested on concrete failures and the design is revised based on
+observed behavior.
+
+The repository should therefore preserve:
+
+- decisions,
+- rejected approaches,
+- assumptions,
+- experiments,
+- failures,
+- and changes made in response to those findings.
+
+---
+
+
+## Initial Reduction Experiments
+
+Before implementing the reducer, two strategies were investigated
+manually using a real incorrect solution for the maximum-profit problem.
+
+### One-element removal
+
+The first strategy removes one element at a time and keeps a deletion
+if the failure is preserved.
+
+The original 11-element testcase was reduced to:
+
+    [4,9,0,9]
+
+At this point, removing any single element caused the candidate and
+oracle to agree.
+
+This demonstrated that one-element deletion can produce a useful
+counterexample, but it may require many candidate/oracle executions.
+
+### Chunk removal
+
+The second strategy removes larger contiguous chunks.
+
+The original testcase was first divided into two chunks. Removing the
+first chunk preserved the failure and reduced the testcase from 11
+elements to 5 elements.
+
+At the 5-element testcase, neither half could be removed while
+preserving the failure. Increasing the granularity to four chunks then
+allowed a further reduction to:
+
+    [4,9,0,9]
+
+This experiment suggested that larger chunks can remove irrelevant
+input more efficiently, while finer granularity is necessary when a
+failure depends on elements distributed across multiple chunks.
+
+---
+
+## What We Learned
+- One-element deletion can reduce the testcase, but may require many
+  candidate/oracle executions.
+- Chunk deletion can remove several elements in fewer executions.
+- Removing a large chunk does not always preserve the failure.
+- Increasing the number of chunks provides finer-grained reduction when
+  a coarser partition cannot make progress.
+
+---
+
 ## Failure Definition
 
 A testcase is considered a correctness failure when both the candidate
@@ -96,47 +166,43 @@ Only the failure condition must be preserved.
 
 ---
 
-## Initial Reduction Experiments
+## Implementation Language
 
-Before implementing the reducer, two strategies were investigated
-manually using a real incorrect solution for the maximum-profit problem.
+The tool will initially be implemented in C++20.
 
-### One-element removal
+The experiments and candidate/oracle programs are already written in
+C++, so using C++20 keeps the experimental environment consistent while
+allowing the tool itself to remain independent of the specific candidate
+algorithm.
 
-The first strategy removes one element at a time and keeps a deletion
-if the failure is preserved.
+## Execution Model
 
-The original 11-element testcase was reduced to:
+The candidate and oracle will be executed as separate processes.
 
-    [4,9,0,9]
+The testcase will be serialized and provided through standard input.
 
-At this point, removing any single element caused the candidate and
-oracle to agree.
+The execution layer will capture standard output and standard error and
+will enforce a timeout so that a hanging program cannot hang the
+shrinker itself.
 
-This demonstrated that one-element deletion can produce a useful
-counterexample, but it may require many candidate/oracle executions.
+A timeout is not considered a correctness failure in V1.
 
-### Chunk removal
+## Output Comparison
 
-The second strategy removes larger contiguous chunks.
+For V1, program outputs will be compared as whitespace-separated tokens.
 
-The original testcase was first divided into two chunks. Removing the
-first chunk preserved the failure and reduced the testcase from 11
-elements to 5 elements.
+Differences in leading, trailing, or repeated whitespace will not
+constitute a correctness difference. A difference in token values or
+token count will constitute a difference.
 
-At the 5-element testcase, neither half could be removed while
-preserving the failure. Increasing the granularity to four chunks then
-allowed a further reduction to:
-
-    [4,9,0,9]
-
-This experiment suggested that larger chunks can remove irrelevant
-input more efficiently, while finer granularity is necessary when a
-failure depends on elements distributed across multiple chunks.
+Only stdout is used for correctness comparison.
+stderr is ignored.
 
 ---
 
-## Initial Reduction Strategy
+## Reducer Design
+
+### Initial Granularity
 
 Based on the experiments, V1 will start with chunk-based reduction.
 
@@ -149,28 +215,12 @@ chunks is increased by powers of two:
 
     2 -> 4 -> 8 -> 16 -> ...
 
-The number of chunks is capped at the current number of elements.
-
-### Reduction rule
-
-For each chunk:
-
-1. Temporarily remove the chunk.
-2. Run the candidate and oracle on the remaining testcase.
-3. Compare their outputs.
-4. If they still differ, accept the reduction and restart the
-   reduction process using the new testcase.
-5. If they agree, reject that deletion and try the next chunk.
-
-If no chunk can be removed at the current granularity:
-
-    k = min(2 * k, current number of elements)
-
-The process continues with the finer granularity.
+At every step, the number of chunks is at most the number of
+elements, so every chunk is non-empty.
 
 ---
 
-## Chunk Partitioning
+### Chunk Partitioning
 
 Chunks are contiguous and preserve the relative order of elements.
 
@@ -190,6 +240,7 @@ becomes:
 Similarly:
 
     10 elements, 4 chunks
+
     [2] [2] [3] [3]
 
 and:
@@ -207,7 +258,49 @@ The last `remainder` chunks contain `base_size + 1` elements.
 
 ---
 
-## Reduction Algorithm
+### Chunk Traversal Order
+
+Chunks are tested from left to right.
+
+When multiple chunks can be removed, the first successful removal is accepted.
+
+Alternative traversal orders, such as right-to-left or
+testing both directions, are not part of V1.
+
+---
+
+### Behavior After a Successful Reduction
+
+For each chunk:
+
+1. Temporarily remove the chunk.
+2. Run the candidate and oracle on the remaining testcase.
+3. Compare their outputs.
+4. If they still differ, accept the reduction.
+5. Discard the previously computed chunks because they were based on
+   the old testcase.
+6. Repartition the new testcase using the same number of chunks `k`.
+7. Start a new pass from the first chunk.
+
+The value of `k` is therefore unchanged after a successful reduction.
+
+---
+
+### Granularity Growth
+
+If no chunk can be removed at the current granularity, increase the
+number of chunks:
+
+    k = min(2 * k, current number of elements)
+
+If the chunk count reaches the number of elements, each chunk contains
+one element.
+
+If no single-element deletion preserves the failure, reduction stops.
+
+---
+
+### Reduction Algorithm
 
 The current conceptual algorithm is:
 
@@ -219,7 +312,9 @@ The current conceptual algorithm is:
 
         split testcase into k contiguous chunks
 
-        for each chunk:
+        reduction_found=false
+
+        for each chunk from left to right:
 
             remove the chunk
 
@@ -227,14 +322,11 @@ The current conceptual algorithm is:
 
             if outputs differ:
                 accept the reduced testcase
-                restart with the same k
+                reduction_found=true
+                break
 
-        if no chunk was removable:
-
-            if k == current testcase size:
-                stop
-
-            k = min(2 * k, current testcase size)
+        if reduction_found:
+            continue
 
 At termination, no individual element can be removed while preserving
 the failure when the chunk count has reached the number of elements.
@@ -277,68 +369,10 @@ respect to element deletion.
 
 The following decisions have not yet been finalized:
 
-- How should program output be compared?
-- Should whitespace differences be ignored?
 - What should happen if the candidate crashes?
 - What should happen if the oracle crashes?
-- How should timeouts be handled if they are considered in a later
-  version?
-- How should invalid or malformed input be handled?
-- How should execution failures be reported to the user?
+- How should malformed candidate/oracle execution be reported?
+- What should happen when the initial testcase does not actually fail?
 
 These questions are intentionally left open until implementation and
 experimentation provide enough evidence to make the decisions.
-
----
-
-## Design Principle
-
-The project is intentionally being developed experimentally.
-
-Rather than choosing a final algorithm in advance, reduction strategies
-are tested on concrete failures and the design is revised based on
-observed behavior.
-
-The repository should therefore preserve:
-
-- decisions,
-- rejected approaches,
-- assumptions,
-- experiments,
-- failures,
-- and changes made in response to those findings.
-
-## Implementation Language
-
-The tool will initially be implemented in C++20.
-
-The experiments and candidate/oracle programs are already written in
-C++, so using C++20 keeps the experimental environment consistent while
-allowing the tool itself to remain independent of the specific candidate
-algorithm.
-
-## Execution Model
-
-The candidate and oracle will be executed as separate processes.
-
-The testcase will be serialized and provided through standard input.
-
-The execution layer will capture standard output and standard error and
-will enforce a timeout so that a hanging program cannot hang the
-shrinker itself.
-
-A timeout is not considered a correctness failure in V1.
-
-## Output Comparison
-
-For V1, program outputs will be compared as whitespace-separated tokens.
-
-Differences in leading, trailing, or repeated whitespace will not
-constitute a correctness difference. A difference in token values or
-token count will constitute a difference.
-
-Only stdout is used for correctness comparison.
-stderr is ignored.
-
-Outputs are compared as whitespace-separated tokens, so differences
-in whitespace alone do not constitute a correctness failure.
