@@ -348,6 +348,8 @@ the failure when the chunk count has reached the number of elements.
   after updating its size.
 - The failure condition can be determined by comparing program outputs.
 - Relative element order is significant and therefore must be preserved.
+- The reducer never removes the final element of a testcase.
+- A one-element testcase is the minimum testcase size considered by V1.
 
 ---
 

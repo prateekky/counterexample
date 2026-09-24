@@ -230,3 +230,20 @@ However, a two-chunk split is not always sufficient. In this
 experiment, neither half of [2,4,9,0,9] could be removed while
 preserving the failure, so the reduction needed to increase
 the number of chunks.
+
+## Automated Reduction
+
+The initial reducer was integrated with the actual candidate and oracle executables.
+
+Starting testcase size: 11
+
+Reduced testcase:
+
+[4,9,0,9]
+
+Reduced testcase size: 4
+
+The reduced testcase still produces different outputs between the
+candidate and oracle, so the correctness failure was preserved.
+
+This confirms that the reducer works end-to-end for this experiment.
