@@ -57,5 +57,5 @@ int main() {
         assert(reduced.values == initial.values);
     }
 
-    std::cout << "All reducer tests passed.\n";
+    cout << "All reducer tests passed.\n";
 }

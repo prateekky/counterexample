@@ -5,8 +5,8 @@ using namespace std;
 class Solution {
 public:
     int maxProfit(vector<int>& prices) {
-        int i = 0;
-        int j = 1;
+        size_t i = 0;
+        size_t j = 1;
         int profit = 0;
         int mx = 0;
 

@@ -247,3 +247,34 @@ The reduced testcase still produces different outputs between the
 candidate and oracle, so the correctness failure was preserved.
 
 This confirms that the reducer works end-to-end for this experiment.
+
+## Large Input Experiment
+
+A 100,000-element testcase was created by embedding the relevant
+failure pattern inside a large amount of irrelevant input.
+
+The candidate produced 5 and the efficient oracle produced 9 for the
+initial testcase.
+
+The reducer produced:
+
+    Initial size: 100000
+    Reduced size: 4
+    Reduced testcase:
+    [4,9,0,9]
+
+The failure was preserved.
+
+The reducer performed 37 failure checks, corresponding to 74 candidate
+and oracle executions.
+
+The complete reduction took approximately 462 ms in this environment.
+
+### Observation
+
+The chunk-based strategy was able to remove a large amount of
+irrelevant input with relatively few failure checks for this testcase.
+
+This demonstrates that the current strategy scales to this particular
+large input, but it does not establish its general performance or
+minimality.

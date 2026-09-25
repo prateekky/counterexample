@@ -6,8 +6,13 @@
 #include <cassert>
 #include <iostream>
 #include <string>
+// #include <chrono>
 
 using namespace std;
+
+size_t failure_checks = 0;
+
+// const auto start = chrono::steady_clock::now();
 
 bool isFailure(
     const string& candidate_path,
@@ -51,6 +56,8 @@ int main(int argc, char* argv[]) {
         reduceTestCase(
             initial,
             [&](const TestCase& test_case) {
+                ++failure_checks;
+
                 return isFailure(
                     candidate_path,
                     oracle_path,
@@ -58,6 +65,13 @@ int main(int argc, char* argv[]) {
                 );
             }
         );
+    
+    // const auto end = chrono::steady_clock::now();
+
+    // const auto elapsed =
+    //     chrono::duration_cast<chrono::milliseconds>(
+    //         end - start
+    //     ).count();
 
     // The reducer must preserve the failure.
     assert(isFailure(
@@ -81,6 +95,15 @@ int main(int argc, char* argv[]) {
         << "Reduced size: "
         << reduced.values.size()
         << '\n';
+
+    cout << "Failure checks: "
+          << failure_checks << '\n';
+
+    cout << "Candidate/oracle executions: "
+            << failure_checks * 2 << '\n';
+
+    // cout << "Elapsed time: "
+    //         << elapsed << " ms\n";
 
     cout << "Reduced testcase:\n";
     cout << reduced.serialize();
