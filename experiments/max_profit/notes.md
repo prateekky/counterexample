@@ -280,10 +280,55 @@ large input, but it does not establish its general performance or
 minimality.
 
 
-| Removed index | Remaining testcase | Candidate | Oracle | Still fails? |
-| ------------: | ------------------ | --------: | -----: | ------------ |
-|             0 | `[9,0,9]`          |         9 |      9 | No           |
-|             1 | `[1,0,9]`          |         9 |      9 | No           |
-|             2 | `[1,9,9]`          |         8 |      8 | No            |
-|             3 | `[1,9,0]`          |         ? |      ? | ?            |
+## Granularity Growth Experiment
 
+Starting testcase:
+
+[4,1,9,1,0,2,9,1]
+
+Candidate output: 8
+Oracle output: 9
+
+### k = 2
+
+Chunks:
+
+[4,1,9,1] | [0,2,9,1]
+
+Removing either chunk caused the candidate and oracle to agree.
+No reduction was possible.
+
+### k = 4
+
+Chunks:
+
+[4,1] [9,1] [0,2] [9,1]
+
+Removing any chunk caused the candidate and oracle to agree.
+No reduction was possible.
+
+### k = 8
+
+Each chunk contained one element. Removing the first element
+preserved the failure:
+
+[1,9,1,0,2,9,1]
+
+The reducer kept k = 8 and continued from the new testcase.
+
+The subsequent greedy reductions produced:
+
+[1,9,1,0,2,9,1]
+→ [1,9,1,0,9,1]
+→ [1,9,0,9,1]
+→ [1,9,0,9]
+
+At [1,9,0,9], no single-element deletion preserved the failure.
+
+### Observation
+
+This experiment demonstrates that a coarse partition may make no
+progress even though a finer partition can.
+
+It supports increasing the chunk count when no reduction is possible
+at the current granularity.
