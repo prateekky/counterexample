@@ -278,3 +278,12 @@ irrelevant input with relatively few failure checks for this testcase.
 This demonstrates that the current strategy scales to this particular
 large input, but it does not establish its general performance or
 minimality.
+
+
+| Removed index | Remaining testcase | Candidate | Oracle | Still fails? |
+| ------------: | ------------------ | --------: | -----: | ------------ |
+|             0 | `[9,0,9]`          |         9 |      9 | No           |
+|             1 | `[1,0,9]`          |         9 |      9 | No           |
+|             2 | `[1,9,9]`          |         8 |      8 | No            |
+|             3 | `[1,9,0]`          |         ? |      ? | ?            |
+
