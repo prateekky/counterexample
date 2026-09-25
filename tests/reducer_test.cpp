@@ -18,15 +18,57 @@ bool alwaysFails(const TestCase&) {
     return true;
 }
 
+bool containsKnownBadSubset(const TestCase& test_case) {
+    const auto& v = test_case.values;
+
+    bool has0 = find(v.begin(), v.end(), 0) != v.end();
+    bool has1 = find(v.begin(), v.end(), 1) != v.end();
+    bool has2 = find(v.begin(), v.end(), 2) != v.end();
+    bool has3 = find(v.begin(), v.end(), 3) != v.end();
+    bool has4 = find(v.begin(), v.end(), 4) != v.end();
+    bool has5 = find(v.begin(), v.end(), 5) != v.end();
+
+    // Known minimal failing testcase: {0, 2, 5}
+    // Additional 4-element failing combinations make the
+    // greedy reduction path potentially choose a larger result.
+    return (has0 && has2 && has5) ||
+           (has1 && has2 && has3 && has5) ||
+           (has1 && has2 && has4 && has5) ||
+           (has0 && has2 && has3 && has4);
+}
+
+bool greedyTrap(const TestCase& tc) {
+    const auto& v = tc.values;
+
+    // Three deliberately chosen failing testcases:
+    // initial: [0,1,2,3]
+    // greedy path: [0,2,3]
+    // globally smaller failing case: [1,3]
+    return v == vector<int>{0,1,2,3} ||
+           v == vector<int>{0,2,3} ||
+           v == vector<int>{1,3};
+}
+
 int main() {
     {
-        TestCase initial{{1, 2, 3, 4, 9, 5}};
+        TestCase initial{{0, 1, 2, 3}};
+
+        assert(greedyTrap(initial));
 
         const TestCase reduced =
-            reduceTestCase(initial, containsNine);
+            reduceTestCase(initial, greedyTrap);
 
-        assert(containsNine(reduced));
-        assert(reduced.values.size() < initial.values.size());
+        assert(greedyTrap(reduced));
+        
+        //smaller failing testcase
+        const TestCase known_smaller{{1,3}};
+        assert(greedyTrap(known_smaller));
+
+        // The greedy reducer does not necessarily find the global minimum.
+        assert(reduced.values.size() == 3);
+
+        cout << "Greedy trap testcase: \n"
+        << reduced.serialize();
     }
 
     {
@@ -36,6 +78,7 @@ int main() {
             reduceTestCase(initial, containsNine);
 
         assert(reduced.values == initial.values);
+        
     }
 
     {
@@ -56,6 +99,7 @@ int main() {
 
         assert(reduced.values == initial.values);
     }
+
 
     cout << "All reducer tests passed.\n";
 }

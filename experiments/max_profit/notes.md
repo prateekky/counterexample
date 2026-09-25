@@ -330,5 +330,32 @@ At [1,9,0,9], no single-element deletion preserved the failure.
 This experiment demonstrates that a coarse partition may make no
 progress even though a finer partition can.
 
-It supports increasing the chunk count when no reduction is possible
-at the current granularity.
+It supports increasing the chunk count when no reduction is possible at the current granularity.
+
+## Synthetic Experiment: Greedy Reduction Is Not Globally Minimal
+
+A controlled synthetic failure predicate was used to test whether the greedy reducer always finds the globally smallest failing testcase.
+
+Initial testcase:
+
+`[0, 1, 2, 3]`
+
+The failure predicate considers the following testcases failing:
+
+- `[0, 1, 2, 3]`
+- `[0, 2, 3]`
+- `[1, 3]`
+
+The reducer produced:
+
+`[0, 2, 3]`
+
+However, a smaller failing testcase exists:
+
+`[1, 3]`
+
+Therefore, the greedy reducer does not guarantee a globally smallest failing testcase.
+
+This is an expected limitation of the current reduction strategy rather than an implementation error. The reducer prioritizes a deterministic greedy search for a smaller failing testcase and does not perform exhaustive search or backtracking.
+
+The experiment is intentionally synthetic and is used to validate a property of the reduction algorithm, not to model a specific real-world program bug.
