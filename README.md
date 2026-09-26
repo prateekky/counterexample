@@ -37,29 +37,29 @@ The relative order of the remaining elements is preserved.
 
 ## Usage
 
-Build the executable:
+Build the executable with CMake:
 
 ```bash
-g++ -std=c++20 -Wall -Wextra -Wpedantic \
-    src/main.cpp \
-    src/testcase.cpp \
-    src/runner.cpp \
-    src/comparator.cpp \
-    src/reducer.cpp \
-    -Isrc \
-    -o counterexample
+cmake -S . -B build
+cmake --build build
+```
+
+The executable is created at:
+
+```text
+build/counterexample
 ```
 
 Run:
 
 ```bash
-./counterexample <candidate> <oracle> <input>
+./build/counterexample <candidate> <oracle> <input>
 ```
 
 Example:
 
 ```bash
-./counterexample \
+./build/counterexample \
     experiments/max_profit/candidate \
     experiments/max_profit/oracle \
     experiments/max_profit/cases/failing.txt
