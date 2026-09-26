@@ -8,6 +8,8 @@ runner_test
 comparator_test
 crash
 timeout
+reducer_test
+integration_test
 
 # Temporary test programs
 crash.cpp

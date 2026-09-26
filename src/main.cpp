@@ -1,4 +1,5 @@
 #include "comparator.h"
+#include "reducer.h"
 #include "runner.h"
 #include "testcase.h"
 
@@ -20,8 +21,8 @@ int main(int argc, char* argv[]) {
         const string oracle_path = argv[2];
         const string input_path = argv[3];
 
-        const TestCase test_case = TestCase::fromFile(input_path);
-        const string input = test_case.serialize();
+        const TestCase initial = TestCase::fromFile(input_path);
+        const string input = initial.serialize();
 
         const ExecutionResult candidate =
             runExecutable(candidate_path, input);
@@ -55,11 +56,52 @@ int main(int argc, char* argv[]) {
         cout << "Oracle output:    "
                   << oracle.stdout_output;
 
-        if (isWrongAnswer(candidate, oracle)) {
-            cout << "Status: WRONG_ANSWER\n";
-        } else {
+        if (!isWrongAnswer(candidate, oracle)) {
             cout << "Status: PASS\n";
+            return 0;
         }
+
+        const TestCase reduced =
+            reduceTestCase(
+                initial,
+                [&](const TestCase& test_case) {
+                    const string reduced_input =
+                        test_case.serialize();
+
+                    const ExecutionResult candidate_result =
+                        runExecutable(
+                            candidate_path,
+                            reduced_input
+                        );
+
+                    const ExecutionResult oracle_result =
+                        runExecutable(
+                            oracle_path,
+                            reduced_input
+                        );
+
+                    return isWrongAnswer(
+                        candidate_result,
+                        oracle_result
+                    );
+                }
+            );
+
+        cout
+            << "Status: WRONG_ANSWER\n";
+
+        cout
+            << "Initial size: "
+            << initial.values.size()
+            << '\n';
+
+        cout
+            << "Reduced size: "
+            << reduced.values.size()
+            << '\n';
+
+        cout << "Reduced testcase:\n";
+        cout << reduced.serialize();
 
     } catch (const exception& e) {
         cerr << "Error: " << e.what() << '\n';
